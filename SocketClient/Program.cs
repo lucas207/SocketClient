@@ -30,7 +30,7 @@ namespace SocketClient
             //{"id":"Lukeira", "evento":"login" }
             //{"id":"Lukeira", "evento":"logout" }
             //{"id":"006B02CD9E29205A", "evento":"update", "dados":{ "updateAttach":"zika" } }
-            //{"id":"006B02CD9E292055", "evento":"hangup", "dados":{ "updateAttach":"zika" } }
+            //{"id":"006B02CD9E29205E", "evento":"hangup", "dados":{ "updateAttach":"zika" } }
             //{"id":"006B02CD9E29205A", "evento":"transfer-ura", "dados":{ "destino":"777" } }
 
         }

@@ -46,22 +46,23 @@ namespace SocketClient
                     new AsyncCallback(ConnectCallback), client);
                 connectDone.WaitOne();
 
-                string msg = Console.ReadLine();
-                // Send test data to the remote device.  
-                Send(client, msg);// "This is a test<EOF>"
-                sendDone.WaitOne();
+                while (true)
+                {
+                    string msg = Console.ReadLine();
+                    // Send test data to the remote device.  
+                    Send(client, msg);// "This is a test<EOF>"
+                    sendDone.WaitOne();
 
-                // Receive the response from the remote device.  
-                Receive(client);
-                receiveDone.WaitOne();
-
-                // Write the response to the console.  
-                Console.WriteLine("Response received : {0}", response);
+                    // Receive the response from the remote device.  
+                    Receive(client);
+                    receiveDone.WaitOne();
+                    
+                }
                 Console.ReadKey();
-
                 // Release the socket.  
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
+                //client.Shutdown(SocketShutdown.Both);
+                //client.Close();
+
 
             }
             catch (Exception e)
@@ -124,20 +125,19 @@ namespace SocketClient
 
                 if (bytesRead > 0)
                 {
+                    state.sb.Clear();
                     // There might be more data, so store the data received so far.  
                     state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+
+                    Console.WriteLine(DateTime.Now+" Response received : "+state.sb);
+                    response = state.sb.ToString();
 
                     // Get the rest of the data.  
                     client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                         new AsyncCallback(ReceiveCallback), state);
-                }
-                else
-                {
-                    // All the data has arrived; put it in response.  
-                    if (state.sb.Length > 1)
-                    {
-                        response = state.sb.ToString();
-                    }
+                //}
+                //else
+                //{
                     // Signal that all bytes have been received.  
                     receiveDone.Set();
                 }
@@ -167,7 +167,7 @@ namespace SocketClient
 
                 // Complete sending the data to the remote device.  
                 int bytesSent = client.EndSend(ar);
-                Console.WriteLine("Sent {0} bytes to server.", bytesSent);
+                Console.WriteLine(DateTime.Now+" Sent {0} bytes to server.", bytesSent);
 
                 // Signal that all bytes have been sent.  
                 sendDone.Set();
@@ -185,7 +185,7 @@ namespace SocketClient
         // Client socket.  
         public Socket workSocket = null;
         // Size of receive buffer.  
-        public const int BufferSize = 256;
+        public const int BufferSize = 99999;
         // Receive buffer.  
         public byte[] buffer = new byte[BufferSize];
         // Received data string.  
