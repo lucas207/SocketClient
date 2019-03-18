@@ -14,7 +14,7 @@ namespace SocketClient
     {
         static void Main(string[] args)
         {
-            //var tipoThread = new Thread(new ThreadStart(RunClient));
+            //var tipoThread = new Thread(RunClient);
             //tipoThread.Start();
 
             AsyncClient.StartClient();
@@ -27,43 +27,85 @@ namespace SocketClient
 
             //var ler = new BinaryReader(saida);
 
-            //{"id":"Lukeira", "evento":"login" }
-            //{"id":"Lukeira", "evento":"logout" }
-            //{"id":"006B02CD9E29205A", "evento":"update", "dados":{ "updateAttach":"zika" } }
-            //{"id":"006B02CD9E29205E", "evento":"hangup", "dados":{ "updateAttach":"zika" } }
-            //{"id":"006B02CD9E29205A", "evento":"transfer-ura", "dados":{ "destino":"777" } }
+            // {"id":"Lukeira", "evento":"login" }
+            // {"id":"Lukeira", "evento":"logout" }
+            // {"id":"006B02CD9E29205A", "evento":"update", "dados":{ "updateAttach":"zika" } }
+            // {"id":"006B02CD9E29205E", "evento":"hangup", "dados":{ "updateAttach":"zika" } }
+            // {"id":"006B02CD9E29205A", "evento":"transfer-ura", "dados":{ "destino":"777" } }
 
         }
 
         public static void RunClient()
         {
             TcpClient client;
-            while (true)
+            byte[] bytes = new byte[1024];
+
+            try
             {
+                // Establish the remote endpoint for the socket.  
+                // This example uses port 11000 on the local computer.  
+                IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
+                IPAddress ipAddress = null;
+                foreach (var ip in ipHostInfo.AddressList)
+                {
+                    //log.Info(ip);
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        ipAddress = ip;
+                    }
+                }
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, 5656);
+
+                // Create a TCP/IP  socket.  
+                Socket sender = new Socket(ipAddress.AddressFamily,
+                    SocketType.Stream, ProtocolType.Tcp);
 
                 try
                 {
-                    client = new TcpClient();
-                    client.Connect("localhost", 5656);
+                    sender.Connect(remoteEP);
 
-                    string msgClient = ReadSocket(client, 99999);
-                    if (msgClient != null)
+                    Console.WriteLine("Socket connected to {0}",
+                        sender.RemoteEndPoint.ToString());
+
+                    while (true)
                     {
-                        Console.WriteLine(msgClient);
+                        string content = Console.ReadLine();
+                        // Encode the data string into a byte array.  
+                        byte[] msg = Encoding.ASCII.GetBytes(content);
+
+                        // Send the data through the socket.  
+                        int bytesSent = sender.Send(msg);
+
+                        // Receive the response from the remote device.  
+                        int bytesRec = sender.Receive(bytes);
+                        Console.WriteLine("Echoed test = {0}",
+                            Encoding.ASCII.GetString(bytes, 0, bytesRec));
                     }
-                    else
-                    {
-                        Send(client, Console.ReadLine());
-                    }
 
+                    // Release the socket.  
+                    sender.Shutdown(SocketShutdown.Both);
+                    sender.Close();
 
-
-                    client.Close();
                 }
-                catch (Exception ex)
+                catch (ArgumentNullException ane)
                 {
+                    Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
                 }
+                catch (SocketException se)
+                {
+                    Console.WriteLine("SocketException : {0}", se.ToString());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Unexpected exception : {0}", e.ToString());
+                }
+
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            //Console.ReadKey();
         }
 
         static void Send(TcpClient client, string resposta)
